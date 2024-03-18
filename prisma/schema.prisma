@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider     = "mongodb"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  firstName        String
+  lastName         String?
+  salutation       String
+  gender           String
+  dob              DateTime
+  mobile           String?
+  designation      String
+  image            String?
+  isDeleted        Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime?      @updatedAt
+  deletedAt        DateTime?
+  Authentication   Authentication @relation(fields: [authenticationId], references: [id])
+  authenticationId String         @unique @db.ObjectId
+  CreatedByArticle Article[]      @relation("createdBy")
+  UpdatedByArticle Article[]      @relation("updatedBy")
+  DeletedByArticle Article[]      @relation("deletedBy")
+  CreatedByGallery Gallery[]      @relation("createdBy")
+  UpdatedByGallery Gallery[]      @relation("updatedBy")
+  DeletedByGallery Gallery[]      @relation("deletedBy")
+}
+
+model Authentication {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  email        String @unique
+  password     String
+  salt         String
+  sessionToken String
+  role         String
+  User         User?
+}
+
+model Category {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  href            String
+  label           String            @unique
+  isActive        Boolean           @default(false)
+  isDeleted       Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  articleCategory ArticleCategory[]
+}
+
+model Tag {
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  href       String
+  label      String       @unique
+  isActive   Boolean      @default(false)
+  isDeleted  Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  deletedAt  DateTime?
+  ArticleTag ArticleTag[]
+}
+
+model Article {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  slug            String            @unique
+  title           String
+  description     String
+  banner          String
+  content         Json
+  published       Boolean           @default(false)
+  isDeleted       Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime?
+  deletedAt       DateTime?
+  createdBy       User              @relation("createdBy", fields: [createdById], references: [id])
+  createdById     String            @db.ObjectId
+  updatedBy       User?             @relation("updatedBy", fields: [updatedById], references: [id])
+  updatedById     String?           @db.ObjectId
+  deletedBy       User?             @relation("deletedBy", fields: [deletedById], references: [id])
+  deletedById     String?           @db.ObjectId
+  articleCategory ArticleCategory[]
+  ArticleTag      ArticleTag[]
+  SeoModel        SeoModel?
+}
+
+model ArticleCategory {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  articleModel  Article  @relation(fields: [articleId], references: [id])
+  articleId     String   @db.ObjectId
+  categoryModel Category @relation(fields: [categoryId], references: [id])
+  categoryId    String   @db.ObjectId
+
+  @@unique([articleId, categoryId])
+}
+
+model ArticleTag {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  articleModel Article @relation(fields: [articleId], references: [id])
+  articleId    String  @db.ObjectId
+  tagModel     Tag     @relation(fields: [tagId], references: [id])
+  tagId        String  @db.ObjectId
+
+  @@unique([articleId, tagId])
+}
+
+model SeoModel {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  metaTitle         String
+  metaDescription   String
+  metaKeyword       String
+  ogImage           String
+  ogPageUrl         String // Canonical link
+  twitterLargeImage String
+  twitterImage      String // ogImage and twitter Image are the same
+  articleModel      Article @relation(fields: [articleId], references: [id])
+  articleId         String  @unique @db.ObjectId
+}
+
+model Gallery {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  imageTitle  String    @unique
+  imagePath   String
+  isDeleted   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdBy   User      @relation("createdBy", fields: [createdById], references: [id])
+  createdById String    @db.ObjectId
+  updatedBy   User?     @relation("updatedBy", fields: [updatedById], references: [id])
+  updatedById String?   @db.ObjectId
+  deletedBy   User?     @relation("deletedBy", fields: [deletedById], references: [id])
+  deletedById String?   @db.ObjectId
+}
